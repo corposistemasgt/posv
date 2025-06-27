@@ -1,0 +1,73 @@
+<?php
+require_once "../security.php"; 
+session_start();
+if ( strpos(get_url(), $_SESSION['ruta']) === false||isset($_SESSION['ruta']) == false) {
+    header("location: ../../login.php?logout");
+    exit;
+}
+if (!isset($_SESSION['user_login_status']) and $_SESSION['user_login_status'] != 1) {
+    header("location: ../../login.php");
+    exit;
+}
+require_once "../db.php"; 
+require_once "../php_conexion.php"; 
+require_once "../funciones.php"; 
+$_SESSION['idpk']= $_GET['a'];
+$_SESSION['idsk']= $_GET['b'];
+$permisos_ver =getpermiso(17);
+require 'includes/header_start.php';
+require 'includes/header_end.php';?>
+<div id="wrapper" class="forced enlarged">
+	<?php require 'includes/menu.php';?>
+	<div class="content-page">
+		<div class="content">
+			<div class="container">
+<?php if ($permisos_ver == 1) {
+    ?>
+				<div class="col-lg-12">
+					<div class="portlet">
+						<div class="portlet-heading bg-secondtabla">
+							<h3 class="portlet-title">
+								Kardex de Productos
+							</h3>
+							
+							<div class="clearfix"></div>
+						</div>
+						<div id="bg-primary" class="panel-collapse collapse show">
+							<div class="portlet-body">
+									<div class="form-group row">
+										<div class="col-md-5">
+										</div>
+									<div class="datos_ajax_delete"></div>
+									<div id='outer_div'></div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<?php
+} else {
+    ?>
+		<section class="content">
+			<div class="alert alert-danger" align="center">
+				<h3>Acceso denegado! </h3>
+				<p>No cuentas con los permisos necesario para acceder a este módulo.</p>
+			</div>
+		</section>
+		<?php
+}
+?>
+				</div>
+			</div>
+			<?php require 'includes/pie.php';?>
+		</div>
+	</div>
+	<?php require 'includes/footer_start.php'
+?>
+	<script type="text/javascript" src="../../js/VentanaCentrada.js"></script>
+	<script> 
+	$(function() {
+	$('#outer_div').load("../ajax/carga_kardex.php");
+	});
+</script>
+	<?php require 'includes/footer_end.php'
+?>

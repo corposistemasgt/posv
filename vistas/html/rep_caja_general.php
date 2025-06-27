@@ -1,0 +1,182 @@
+<?php
+require_once "../security.php"; 
+session_start();
+if ( strpos(get_url(), $_SESSION['ruta']) === false||isset($_SESSION['ruta']) == false) {
+    header("location: ../../login.php?logout");
+    exit;
+}
+if (!isset($_SESSION['user_login_status']) and $_SESSION['user_login_status'] != 1) {
+    header("location: ../../login.php");
+    exit;
+}
+require_once "../db.php";
+require_once "../php_conexion.php"; 
+include "../funciones.php";
+$user_id = $_SESSION['id_users'];
+$permisos_ver =getpermiso(43);
+$permisos_editar =getpermiso(44);
+require 'includes/header_start.php';
+require 'includes/header_end.php';?>
+<div id="wrapper">
+	<?php require 'includes/menu.php';?>
+	<div class="content-page">
+		<div class="content">
+			<div class="container">
+				<?php if ($permisos_ver == 1) {
+    ?>
+					<div class="col-lg-12">
+						<div class="portlet">
+							<div class="portlet-heading bg-secondtabla">
+								<h3 class="portlet-title">
+									Corte de Caja
+								</h3>
+								<div class="clearfix"></div>
+							</div>
+							<div id="bg-primary" class="panel-collapse collapse show">
+								<div class="portlet-body">
+									<form class="form-horizontal" role="form" id="datos_cotizacion">
+										<div class="form-group row">
+											<div class="col-xs-3">
+												<div class="input-group">
+													<div class="input-group-addon">
+														<i class="fa fa-calendar"></i>
+													</div>
+													<input type="text" class="form-control daterange pull-right" value="<?php echo "01" . date('/m/Y') . ' - ' . date('d/m/Y'); ?>" id="range" readonly>
+												</div>
+											</div>
+											<div class="col-xs-3">
+												<div class="input-group">
+													<select id="employee_id" class='form-control' onchange="load(1);">
+														<option value="">Selecciona Cajero</option>
+														<option value="">Todos</option>
+														<?php
+$sql1 = mysqli_query($conexion, "select * from users");
+    while ($rw1 = mysqli_fetch_array($sql1)) {
+        ?>
+															<option value="<?php echo $rw1['id_users'] ?>"><?php echo $rw1['nombre_users'] . ' ' . $rw1['apellido_users']; ?></option>
+															<?php
+}
+    ?>
+													</select>
+													<span class="input-group-btn">
+														<button class="btn btn-primary" type="button" onclick='load(1);'><i class='fa fa-search'></i></button>
+													</span>
+												</div>
+											</div>
+
+											<div class="col-xs-1">
+												<div id="loader" class="text-center"></div>
+											</div>
+
+											<div class="col-xs-5 ">
+											<?php if ($permisos_editar == 1) {?>
+												<div class="btn-group pull-right">
+													<button type="button"  onclick="reporte();" class="btn btn-default waves-effect waves-light"><i class='fa fa-print'></i> Imprimir</button>
+													
+												</div>
+												<?php }?>
+											</div>
+										</div>
+									</form>
+									<div class="datos_ajax_delete"></div>
+									<div class='outer_div'></div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<?php
+} else {
+    ?>
+					<section class="content">
+						<div class="alert alert-danger" align="center">
+							<h3>Acceso denegado! </h3>
+							<p>No cuentas con los permisos necesario para acceder a este módulo.</p>
+						</div>
+					</section>
+					<?php
+}
+?>
+
+			</div>
+		</div>
+		<?php require 'includes/pie.php';?>
+	</div>
+</div>
+<?php require 'includes/footer_start.php'
+?>
+<script type="text/javascript" src="../../js/VentanaCentrada.js"></script>
+<script>
+	$(function () {
+        $(".select2").select2();
+    });
+	$(function() {
+		load(1);
+$('.daterange').daterangepicker({
+	buttonClasses: ['btn', 'btn-sm'],
+	applyClass: 'btn-success',
+	cancelClass: 'btn-default',
+	locale: {
+		format: "DD/MM/YYYY",
+		separator: " - ",
+		applyLabel: "Aplicar",
+		cancelLabel: "Cancelar",
+		fromLabel: "Desde",
+		toLabel: "Hasta",
+		customRangeLabel: "Custom",
+		daysOfWeek: [
+		"Do",
+		"Lu",
+		"Ma",
+		"Mi",
+		"Ju",
+		"Vi",
+		"Sa"
+		],
+		monthNames: [
+		"Enero",
+		"Febrero",
+		"Marzo",
+		"Abril",
+		"Mayo",
+		"Junio",
+		"Julio",
+		"Agosto",
+		"Septiembre",
+		"Octubre",
+		"Noviembre",
+		"Diciembre"
+		],
+		firstDay: 1
+	},
+	opens: "right"
+
+});
+});
+	function load(page){
+    var range=$("#range").val();
+    var employee_id=$("#employee_id").val();
+    var parametros = {"action":"ajax","page":page,'range':range,'employee_id':employee_id};
+    $("#loader").fadeIn('slow'); 
+    $.ajax({
+      url:'../ajax/rep_corte_caja.php',
+      data: parametros,
+      beforeSend: function(objeto){
+        $("#loader").html("<img src='../../img/ajax-loader.gif'>");
+      },
+      success:function(data){
+        $(".outer_div").html(data).fadeIn('slow');
+        $("#loader").html("");
+      }
+    })
+  }
+</script>
+<script>
+  function reporte(){
+    var daterange=$("#range").val();
+    var employee_id=$("#employee_id").val();
+    VentanaCentrada('../pdf/documentos/rep_corte_caja.php?daterange='+daterange+"&employee_id="+employee_id,'Reporte','','800','600','true');
+  }
+</script>
+<?php require 'includes/footer_end.php'
+?>

@@ -1,0 +1,219 @@
+<?php
+require_once "../security.php"; 
+session_start();
+if ( strpos(get_url(), $_SESSION['ruta']) === false||isset($_SESSION['ruta']) == false) {
+    header("location: ../../login.php?logout");
+    exit;
+}
+if (!isset($_SESSION['user_login_status']) and $_SESSION['user_login_status'] != 1) {
+    header("location: ../../login.php");
+    exit;
+}
+require_once "../db.php"; 
+require_once "../php_conexion.php";
+require_once "../funciones.php";
+$permisos_ver =getpermiso(30);
+$simbolo_moneda = "Q";
+if (isset($_GET['numero_factura'])) {
+    $numero_factura = mysqli_real_escape_string($conexion, (strip_tags($_REQUEST['numero_factura'], ENT_QUOTES)));
+    $sql_abono      = mysqli_query($conexion, "select * from credito_proveedor, proveedores where credito_proveedor.numero_factura='$numero_factura' and credito_proveedor.id_proveedor=proveedores.id_proveedor");
+    $count          = mysqli_num_rows($sql_abono);
+    if ($count > 0) {
+        $rw                         = mysqli_fetch_array($sql_abono);
+        $_SESSION['numero_factura'] = $numero_factura;
+    } else {
+        header("location: ../html/cxp.php");
+        exit;
+    }
+} else {
+    header("location: ../html/cxp.php");
+    exit;
+}
+require 'includes/header_start.php';
+require 'includes/header_end.php';?>
+<div id="wrapper">
+	<?php require 'includes/menu.php';?>
+	<div class="content-page">
+		<div class="content">
+			<div class="container">
+				<?php if ($permisos_ver == 1) {
+    ?>
+					<div class="col-lg-12">
+						<div class="portlet">
+							<div class="portlet-heading bg-primary">
+								<h3 class="portlet-title">
+									Abonos a Proveedores
+								</h3>
+								<div class="portlet-widgets">
+									<a href="javascript:;" data-toggle="reload"><i class="ion-refresh"></i></a>
+									<span class="divider"></span>
+									<a data-toggle="collapse" data-parent="#accordion1" href="#bg-primary"><i class="ion-minus-round"></i></a>
+									<span class="divider"></span>
+									<a href="#" data-toggle="remove"><i class="ion-close-round"></i></a>
+								</div>
+								<div class="clearfix"></div>
+							</div>
+							<div id="bg-primary" class="panel-collapse collapse show">
+								<div class="portlet-body">
+									<div class="row">
+										<div class="col-lg-4">
+											<?php
+include "../modal/agregar_abono_proveedor.php";
+    ?>
+											<div class="col-lg-12 col-md-6">
+												<div class="widget-bg-color-icon card-box">
+													<div class="bg-icon bg-icon-purple pull-left">
+														<i class="ti-user text-purple"></i>
+													</div>
+													<div class="text-right">
+													<h5 class="text-dark"><b class="counter"><?php echo $rw['nombre_proveedor']; ?></b></h5>
+														<a class='btn btn-primary waves-effect waves-light btn-sm m-b-5' href="cxp.php" title="Regresar a los Créditos"><i class="fa fa-reply"></i> Regresar
+														</a>
+													</div>
+													<div class="clearfix"></div>
+												</div>
+											</div>
+											<div id="widgets"></div>
+
+										</div>
+										<div class="col-lg-8">
+											<div class="panel panel-color panel-info">
+												<div class="panel-body">
+													<form class="form-horizontal" role="form" id="datos_cotizacion">
+														<div class="form-group row">
+															<div class="col-xs-4">
+																<div class="input-group">
+																	<div class="input-group-addon">
+																		<i class="fa fa-calendar"></i>
+																	</div>
+																	<input type="text" class="form-control daterange pull-right" value="<?php echo "01" . date('/m/Y') . ' - ' . date('d/m/Y'); ?>" id="range" readonly>
+																	<span class="input-group-btn">
+														<button class="btn btn-info waves-effect waves-light" type="button" onclick='load(1);'><i class='fa fa-search'></i></button>
+													</span>
+
+																</div><!-- /input-group -->
+															</div>
+															<div class="col-xs-3">
+																<div id="loader" class="text-left"></div>
+															</div>
+															<div class="col-xs-2">
+																<div class="btn-group pull-center">
+																	<?php if ($permisos_ver == 1) {?>
+																	<button type="button" class="btn btn-success waves-effect waves-light" data-toggle="modal" data-target="#add-stock"><i class="fa fa-plus"></i> Abono</button>
+																	<?php }?>
+																</div>
+															</div>
+															<div class="col-xs-2">
+																<div class="btn-group pull-center">
+																	<?php if ($permisos_ver == 1) {?>
+																	<button type="button"  onclick="reporte();" class="btn btn-default waves-effect waves-light" title="Imprimir"><i class='fa fa-print'></i></button>
+																	<?php }?>
+																</div>
+															</div>
+														</div>
+													</form>
+													<div class="col-md-12" align="center">
+														<div id="resultados_ajax"></div>
+														<div class="clearfix"></div>
+														<div class='outer_div'></div><!-- Carga los datos ajax -->
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+
+								</div>
+							</div>
+						</div>
+					</div>
+					<?php
+} else {
+    ?>
+					<section class="content">
+						<div class="alert alert-danger" align="center">
+							<h3>Acceso denegado! </h3>
+							<p>No cuentas con los permisos necesario para acceder a este módulo.</p>
+						</div>
+					</section>
+					<?php
+}
+?>
+
+			</div>
+		</div>
+		<?php require 'includes/pie.php';?>
+	</div>
+</div>
+<?php require 'includes/footer_start.php'
+?>
+<script type="text/javascript" src="../../js/ver_cxp.js"></script>
+<script type="text/javascript" src="../../js/VentanaCentrada.js"></script>
+<script>
+	$(document).ready( function () {
+		$(".UpperCase").on("keypress", function () {
+			$input=$(this);
+			setTimeout(function () {
+				$input.val($input.val().toUpperCase());
+			},50);
+		})
+	})
+</script>
+<script>
+	$(function() {
+		load(1);
+$('.daterange').daterangepicker({
+	buttonClasses: ['btn', 'btn-sm'],
+	applyClass: 'btn-success',
+	cancelClass: 'btn-default',
+	locale: {
+		format: "DD/MM/YYYY",
+		separator: " - ",
+		applyLabel: "Aplicar",
+		cancelLabel: "Cancelar",
+		fromLabel: "Desde",
+		toLabel: "Hasta",
+		customRangeLabel: "Custom",
+		daysOfWeek: [
+		"Do",
+		"Lu",
+		"Ma",
+		"Mi",
+		"Ju",
+		"Vi",
+		"Sa"
+		],
+		monthNames: [
+		"Enero",
+		"Febrero",
+		"Marzo",
+		"Abril",
+		"Mayo",
+		"Junio",
+		"Julio",
+		"Agosto",
+		"Septiembre",
+		"Octubre",
+		"Noviembre",
+		"Diciembre"
+		],
+		firstDay: 1
+	},
+	opens: "right"
+
+});
+});
+</script>
+<script>
+	function reporte() {
+		var daterange = $("#range").val();
+		var tipo = $("#tipo").val();
+		VentanaCentrada('../pdf/documentos/rep_cxp.php?daterange=' + daterange, 'Reporte', '', '800', '600', 'true');
+	}
+</script>
+<script>
+	function imprimir_abono(id_abono) {
+		VentanaCentrada('../pdf/documentos/rep_abono_prov.php?id_abono=' + id_abono, 'Reporte', '', '800', '600', 'true');
+	}
+</script>
+<?php require 'includes/footer_end.php'
+?>
